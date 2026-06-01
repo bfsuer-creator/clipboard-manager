@@ -1,0 +1,57 @@
+{
+  "name": "clipboard-manager",
+  "version": "1.0.0",
+  "description": "Windows 历史剪贴板管理器 - 记录文字和图片复制历史",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node start.js",
+    "build": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "28.3.3",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.clipboard.manager",
+    "productName": "剪贴板历史管理器",
+    "directories": {
+      "output": "release"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "bfsuer-creator",
+      "repo": "clipboard-manager"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/app-icon.png",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "language": "2052",
+      "unicode": true,
+      "shortcutName": "剪贴板历史管理器"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  }
+}

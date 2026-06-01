@@ -1,0 +1,237 @@
+const { app, BrowserWindow, Tray, Menu, globalShortcut, clipboard, nativeImage, ipcMain } = require('electron');
+const path = require('path');
+const store = require('./store.js');
+const { autoUpdater } = require('electron-updater');
+
+// Use userData directory for production, relative path for development
+const isPackaged = app.isPackaged;
+if (isPackaged) {
+  store.init(path.join(app.getPath('userData'), 'data'));
+}
+
+app.isQuitting = false;
+
+let mainWindow = null;
+let tray = null;
+let lastClipboardText = '';
+let lastClipboardImageHash = '';
+
+// --- Window ---
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 420,
+    height: 600,
+    resizable: true,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  // Center window on screen
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.center();
+    mainWindow.show();
+  });
+
+  // Hide on blur (click outside)
+  mainWindow.on('blur', () => {
+    mainWindow.hide();
+  });
+
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+}
+
+function toggleWindow() {
+  if (mainWindow.isVisible()) {
+    mainWindow.hide();
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.webContents.send('window:shown');
+  }
+}
+
+// --- Tray ---
+
+function createTray() {
+  const iconPath = path.join(__dirname, '..', 'assets', 'tray-icon.png');
+  const icon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(icon);
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '打开主界面',
+      click: () => {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setToolTip('剪贴板历史管理器');
+  tray.setContextMenu(contextMenu);
+  tray.on('click', toggleWindow);
+}
+
+// --- Global Shortcut ---
+
+function registerShortcut() {
+  const registered = globalShortcut.register('CommandOrControl+Shift+V', toggleWindow);
+  if (!registered) {
+    console.warn('Failed to register global shortcut Ctrl+Shift+V');
+  }
+}
+
+// --- Clipboard Polling ---
+
+function startClipboardPolling() {
+  setInterval(() => {
+    // Check for image first (clipboard might have both)
+    const img = clipboard.readImage();
+    if (!img.isEmpty()) {
+      const hash = hashBuffer(img.toPNG());
+      if (hash !== lastClipboardImageHash) {
+        lastClipboardImageHash = hash;
+        const imagePath = store.saveImage(img.toPNG());
+        const entry = store.addItem({
+          type: 'image',
+          imagePath: imagePath
+        });
+        store.cleanup(store.loadSettings().retentionDays, store.MAX_ITEMS);
+        sendToRenderer('history:new-item', entry);
+        return;
+      }
+    }
+
+    // Check for text
+    const text = clipboard.readText();
+    if (text && text !== lastClipboardText) {
+      lastClipboardText = text;
+      const entry = store.addItem({
+        type: 'text',
+        content: text
+      });
+      store.cleanup(store.loadSettings().retentionDays, store.MAX_ITEMS);
+      sendToRenderer('history:new-item', entry);
+    }
+  }, 500);
+}
+
+function hashBuffer(buf) {
+  const crypto = require('crypto');
+  return crypto.createHash('md5').update(buf).digest('hex');
+}
+
+function sendToRenderer(channel, data) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
+
+// --- IPC Handlers ---
+
+function registerIpcHandlers() {
+  ipcMain.handle('history:get', () => store.getHistory());
+
+  ipcMain.handle('item:pin', (_event, id) => store.pinItem(id));
+
+  ipcMain.handle('item:delete', (_event, id) => store.removeItem(id));
+
+  ipcMain.handle('clipboard:copy', (_event, id) => {
+    const history = store.loadHistory();
+    const item = history.find(h => h.id === id);
+    if (!item) return false;
+
+    if (item.type === 'text') {
+      clipboard.writeText(item.content);
+    } else if (item.type === 'image' && item.imagePath) {
+      const img = nativeImage.createFromPath(item.imagePath);
+      clipboard.writeImage(img);
+    }
+    return true;
+  });
+
+  ipcMain.handle('settings:get', () => store.loadSettings());
+
+  ipcMain.handle('settings:save', (_event, settings) => {
+    store.saveSettings(settings);
+    store.cleanup(settings.retentionDays, store.MAX_ITEMS);
+    return store.loadSettings();
+  });
+}
+
+// --- Auto Updater ---
+
+function setupAutoUpdater() {
+  if (!app.isPackaged) {
+    // Skip update check in development
+    return;
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', () => {
+    sendToRenderer('update:status', { status: 'downloading' });
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    sendToRenderer('update:status', { status: 'downloaded' });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-update error:', err.message);
+  });
+
+  // Check every 3 hours
+  autoUpdater.checkForUpdatesAndNotify();
+  setInterval(() => {
+    autoUpdater.checkForUpdates();
+  }, 3 * 60 * 60 * 1000);
+}
+
+// --- App Lifecycle ---
+
+app.whenReady().then(() => {
+  registerIpcHandlers();
+  createTray();
+  registerShortcut();
+  createWindow();
+  startClipboardPolling();
+  setupAutoUpdater();
+
+  // Initial cleanup on startup
+  const settings = store.loadSettings();
+  store.cleanup(settings.retentionDays, store.MAX_ITEMS);
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true;
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:">
+  <title>剪贴板历史</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">
+      <h1>剪贴板历史</h1>
+      <span class="status" id="status">就绪</span>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索剪贴板历史..." disabled>
+      <button id="settingsBtn" title="设置">&#9881;</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="text">文字</button>
+      <button class="filter-btn" data-filter="image">图片</button>
+      <span class="shortcut-hint">Ctrl+Shift+V</span>
+    </div>
+
+    <div class="list-container" id="listContainer">
+      <div class="empty-state">
+        <div class="empty-icon">&#128203;</div>
+        <p>还没有剪贴板记录</p>
+        <p class="hint">试试复制一段文字或截图，内容会自动出现在这里</p>
+        <p class="shortcut-info">按 Ctrl+Shift+V 可随时呼出此窗口</p>
+      </div>
+    </div>
+
+    <div class="welcome-overlay" id="welcomeOverlay" style="display: none;">
+      <div class="welcome-card">
+        <h2>欢迎使用<br>剪贴板历史管理器</h2>
+        <div class="welcome-features">
+          <div class="welcome-feature">
+            <span class="welcome-icon">&#9000;</span>
+            <span>Ctrl+Shift+V 随时呼出或隐藏窗口</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="welcome-icon">&#128203;</span>
+            <span>复制文字或图片自动记录，点击卡片即可回贴</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="welcome-icon">&#11088;</span>
+            <span>收藏可永久保留重要内容，不怕过期清理</span>
+          </div>
+        </div>
+        <button id="welcomeDismissBtn">开始使用</button>
+      </div>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel" style="display: none;">
+      <h3>设置</h3>
+      <label>
+        保留天数：
+        <select id="retentionSelect">
+          <option value="1">1 天</option>
+          <option value="3" selected>3 天</option>
+          <option value="5">5 天</option>
+        </select>
+      </label>
+      <button id="saveSettingsBtn">保存</button>
+    </div>
+
+    <div class="toast" id="toast" style="display: none;"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
