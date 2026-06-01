@@ -95,6 +95,7 @@ async function init() {
 
 function render() {
   let filtered = historyData.filter(item => {
+    if (filterType === 'fav' && !item.pinned) return false;
     if (filterType === 'text' && item.type !== 'text') return false;
     if (filterType === 'image' && item.type !== 'image') return false;
     if (!searchQuery) return true;
