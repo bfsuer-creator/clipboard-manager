@@ -89,6 +89,34 @@ async function init() {
       showToast('新版本已就绪，下次启动自动更新');
     }
   });
+
+  // Close button + menu
+  const btnClose = document.getElementById('btnClose');
+  const closeMenu = document.getElementById('closeMenu');
+
+  btnClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeMenu.style.display = closeMenu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  closeMenu.querySelectorAll('.close-menu-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMenu.style.display = 'none';
+      const action = item.dataset.action;
+      if (action === 'quit') {
+        window.clipboardAPI.quitApp();
+      } else if (action === 'hide') {
+        window.clipboardAPI.hideApp();
+      }
+      // 'cancel' just closes the menu, nothing else needed
+    });
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', () => {
+    closeMenu.style.display = 'none';
+  });
 }
 
 // --- Render ---

@@ -11,7 +11,16 @@
   <div class="app-container">
     <div class="header">
       <h1>剪贴板历史</h1>
-      <span class="status" id="status">就绪</span>
+      <div class="header-right">
+        <span class="status" id="status">就绪</span>
+        <button class="btn-close" id="btnClose" title="关闭">&#10005;</button>
+        <div class="close-menu" id="closeMenu" style="display: none;">
+          <div class="close-menu-item" data-action="hide">最小化到托盘</div>
+          <div class="close-menu-item" data-action="quit">彻底退出</div>
+          <div class="close-menu-divider"></div>
+          <div class="close-menu-item" data-action="cancel">取消</div>
+        </div>
+      </div>
     </div>
 
     <div class="search-bar">

@@ -1,6 +1,6 @@
 {
   "name": "clipboard-manager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Windows 历史剪贴板管理器 - 记录文字和图片复制历史",
   "main": "src/main.js",
   "scripts": {

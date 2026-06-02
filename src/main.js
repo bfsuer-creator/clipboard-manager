@@ -181,6 +181,15 @@ function registerIpcHandlers() {
     store.cleanup(settings.retentionDays, store.MAX_ITEMS);
     return store.loadSettings();
   });
+
+  ipcMain.on('app:quit', () => {
+    app.isQuitting = true;
+    app.quit();
+  });
+
+  ipcMain.on('app:hide', () => {
+    mainWindow.hide();
+  });
 }
 
 // --- Auto Updater ---
@@ -211,6 +220,22 @@ function setupAutoUpdater() {
   setInterval(() => {
     autoUpdater.checkForUpdates();
   }, 3 * 60 * 60 * 1000);
+}
+
+// --- Single Instance Lock ---
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
 }
 
 // --- App Lifecycle ---

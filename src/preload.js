@@ -30,5 +30,9 @@ contextBridge.exposeInMainWorld('clipboardAPI', {
   // Update status
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update:status', (_event, info) => callback(info));
-  }
+  },
+
+  // App lifecycle
+  quitApp: () => ipcRenderer.send('app:quit'),
+  hideApp: () => ipcRenderer.send('app:hide')
 });
