@@ -47,7 +47,7 @@ function createWindow() {
   mainWindow.on('close', (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
-      mainWindow.hide();
+      mainWindow.minimize();
     }
   });
 }
@@ -277,7 +277,8 @@ app.whenReady().then(() => {
   createWindow();
   startClipboardPolling();
   setupAutoUpdater();
-  ensureDesktopShortcut();
+  // Defer shortcut creation to avoid blocking first render
+  setTimeout(() => ensureDesktopShortcut(), 1000);
 
   // Initial cleanup on startup
   const settings = store.loadSettings();
