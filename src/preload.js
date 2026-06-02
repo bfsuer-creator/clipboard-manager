@@ -34,5 +34,8 @@ contextBridge.exposeInMainWorld('clipboardAPI', {
 
   // App lifecycle
   quitApp: () => ipcRenderer.send('app:quit'),
-  hideApp: () => ipcRenderer.send('app:hide')
+  hideApp: () => ipcRenderer.send('app:hide'),
+
+  // Manual update check
+  checkForUpdates: () => ipcRenderer.invoke('update:check')
 });

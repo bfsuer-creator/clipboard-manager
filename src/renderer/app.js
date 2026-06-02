@@ -81,12 +81,20 @@ async function init() {
   });
 
   // Update status
+  const updateStatusText = document.getElementById('updateStatusText');
   window.clipboardAPI.onUpdateStatus((info) => {
+    if (info.status === 'dev-mode') return;
     if (info.status === 'downloading') {
       statusEl.textContent = '更新中...';
+      updateStatusText.textContent = '正在下载更新...';
     } else if (info.status === 'downloaded') {
       statusEl.textContent = '已下载';
+      updateStatusText.textContent = '新版本已就绪，下次启动自动更新';
       showToast('新版本已就绪，下次启动自动更新');
+    } else if (info.status === 'up-to-date') {
+      updateStatusText.textContent = '已是最新版本';
+    } else if (info.status === 'error') {
+      updateStatusText.textContent = '检查失败：' + (info.message || '网络错误');
     }
   });
 
@@ -117,6 +125,21 @@ async function init() {
   document.addEventListener('click', () => {
     closeMenu.style.display = 'none';
   });
+
+  // Manual update check
+  const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+  if (checkUpdateBtn) {
+    checkUpdateBtn.addEventListener('click', async () => {
+      checkUpdateBtn.disabled = true;
+      updateStatusText.textContent = '正在检查...';
+      const result = await window.clipboardAPI.checkForUpdates();
+      checkUpdateBtn.disabled = false;
+      if (!result.ok) {
+        updateStatusText.textContent = '检查失败：' + (result.message || '网络错误');
+      }
+      // Success/found-update status comes via onUpdateStatus event
+    });
+  }
 }
 
 // --- Render ---

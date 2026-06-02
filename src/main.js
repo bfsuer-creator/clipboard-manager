@@ -197,6 +197,7 @@ function registerIpcHandlers() {
 function setupAutoUpdater() {
   if (!app.isPackaged) {
     // Skip update check in development
+    sendToRenderer('update:status', { status: 'dev-mode' });
     return;
   }
 
@@ -207,12 +208,16 @@ function setupAutoUpdater() {
     sendToRenderer('update:status', { status: 'downloading' });
   });
 
+  autoUpdater.on('update-not-available', () => {
+    sendToRenderer('update:status', { status: 'up-to-date' });
+  });
+
   autoUpdater.on('update-downloaded', () => {
     sendToRenderer('update:status', { status: 'downloaded' });
   });
 
   autoUpdater.on('error', (err) => {
-    console.error('Auto-update error:', err.message);
+    sendToRenderer('update:status', { status: 'error', message: err.message });
   });
 
   // Check every 3 hours
@@ -220,6 +225,16 @@ function setupAutoUpdater() {
   setInterval(() => {
     autoUpdater.checkForUpdates();
   }, 3 * 60 * 60 * 1000);
+
+  // Manual check IPC
+  ipcMain.handle('update:check', async () => {
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return { ok: true, info: result ? result.updateInfo.version : null };
+    } catch (err) {
+      return { ok: false, message: err.message };
+    }
+  });
 }
 
 // --- Single Instance Lock ---
