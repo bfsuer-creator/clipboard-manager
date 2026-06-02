@@ -24,7 +24,8 @@
     "publish": {
       "provider": "github",
       "owner": "bfsuer-creator",
-      "repo": "clipboard-manager"
+      "repo": "clipboard-manager",
+      "releaseType": "release"
     },
     "files": [
       "src/**/*",
