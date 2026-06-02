@@ -52,9 +52,9 @@ async function init() {
     });
   });
 
-  // Settings
+  // Settings — open panel
   settingsBtn.addEventListener('click', () => {
-    settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
+    settingsPanel.style.display = 'block';
   });
 
   saveSettingsBtn.addEventListener('click', async () => {
@@ -98,6 +98,11 @@ async function init() {
     }
   });
 
+  // Minimize button
+  document.getElementById('btnMinimize').addEventListener('click', () => {
+    window.clipboardAPI.minimizeApp();
+  });
+
   // Close button + menu
   const btnClose = document.getElementById('btnClose');
   const closeMenu = document.getElementById('closeMenu');
@@ -111,19 +116,20 @@ async function init() {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       closeMenu.style.display = 'none';
-      const action = item.dataset.action;
-      if (action === 'quit') {
+      if (item.dataset.action === 'quit') {
         window.clipboardAPI.quitApp();
-      } else if (action === 'hide') {
-        window.clipboardAPI.hideApp();
       }
-      // 'cancel' just closes the menu, nothing else needed
     });
   });
 
   // Close menu when clicking outside
   document.addEventListener('click', () => {
     closeMenu.style.display = 'none';
+  });
+
+  // Settings close button
+  document.getElementById('btnSettingsClose').addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
   });
 
   // Manual update check

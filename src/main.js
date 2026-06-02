@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, clipboard, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, clipboard, nativeImage, ipcMain, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const store = require('./store.js');
 const { autoUpdater } = require('electron-updater');
 
@@ -43,11 +44,6 @@ function createWindow() {
     mainWindow.show();
   });
 
-  // Hide on blur (click outside)
-  mainWindow.on('blur', () => {
-    mainWindow.hide();
-  });
-
   mainWindow.on('close', (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
@@ -57,13 +53,16 @@ function createWindow() {
 }
 
 function toggleWindow() {
-  if (mainWindow.isVisible()) {
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+    mainWindow.focus();
+  } else if (mainWindow.isVisible()) {
     mainWindow.hide();
   } else {
     mainWindow.show();
     mainWindow.focus();
-    mainWindow.webContents.send('window:shown');
   }
+  mainWindow.webContents.send('window:shown');
 }
 
 // --- Tray ---
@@ -187,8 +186,8 @@ function registerIpcHandlers() {
     app.quit();
   });
 
-  ipcMain.on('app:hide', () => {
-    mainWindow.hide();
+  ipcMain.on('app:minimize', () => {
+    mainWindow.minimize();
   });
 }
 
@@ -239,6 +238,22 @@ function setupAutoUpdater() {
 
 // --- Single Instance Lock ---
 
+function ensureDesktopShortcut() {
+  try {
+    const shortcutPath = path.join(app.getPath('desktop'), '剪贴板历史管理器.lnk');
+    if (!fs.existsSync(shortcutPath)) {
+      shell.writeShortcutLink(shortcutPath, {
+        target: app.getPath('exe'),
+        description: '剪贴板历史管理器',
+        icon: app.getPath('exe'),
+        iconIndex: 0
+      });
+    }
+  } catch (_) {
+    // ignore errors creating shortcut
+  }
+}
+
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -262,6 +277,7 @@ app.whenReady().then(() => {
   createWindow();
   startClipboardPolling();
   setupAutoUpdater();
+  ensureDesktopShortcut();
 
   // Initial cleanup on startup
   const settings = store.loadSettings();

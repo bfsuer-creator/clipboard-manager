@@ -13,9 +13,9 @@
       <h1>剪贴板历史</h1>
       <div class="header-right">
         <span class="status" id="status">就绪</span>
+        <button class="btn-minimize" id="btnMinimize" title="最小化">&#8722;</button>
         <button class="btn-close" id="btnClose" title="关闭">&#10005;</button>
         <div class="close-menu" id="closeMenu" style="display: none;">
-          <div class="close-menu-item" data-action="hide">最小化到托盘</div>
           <div class="close-menu-item" data-action="quit">彻底退出</div>
           <div class="close-menu-divider"></div>
           <div class="close-menu-item" data-action="cancel">取消</div>
@@ -67,7 +67,10 @@
     </div>
 
     <div class="settings-panel" id="settingsPanel" style="display: none;">
-      <h3>设置</h3>
+      <div class="settings-header">
+        <h3>设置</h3>
+        <button class="btn-settings-close" id="btnSettingsClose" title="关闭">&#10005;</button>
+      </div>
       <label>
         保留天数：
         <select id="retentionSelect">
